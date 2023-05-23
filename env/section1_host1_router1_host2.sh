@@ -28,4 +28,5 @@ sudo ip netns exec router1 sysctl net.ipv4.ip_forward=1
 # お掃除
 # sudo ip netns exec host1 ip link del host1-router1;sudo ip netns exec host2 ip link del host2-router1;sudo ip netns del host1;sudo ip netns del host2;sudo ip netns del router1
 
-
+# 疎通確認
+# sudo ip netns exec host1 ping -c 2 192.0.1.2
