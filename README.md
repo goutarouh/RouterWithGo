@@ -11,3 +11,10 @@ https://twitter.com/ken5owata
 
 - メモ
   https://zenn.dev/gottie/scraps/ff460572e29319
+
+
+- 実行
+```
+go build .
+go run main
+```
