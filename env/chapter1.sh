@@ -30,3 +30,6 @@ sudo ip netns exec router1 sysctl net.ipv4.ip_forward=1
 
 # 疎通確認
 # sudo ip netns exec host1 ping -c 2 192.0.1.2
+
+# ルーター起動
+# sudo ip netns exec router1 ./main --mode ch1
