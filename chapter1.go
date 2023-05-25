@@ -23,6 +23,10 @@ func runChapter1() {
 		// 無視するインターフェイスか確認
 		if !isIgnoreInterfaces(netif.Name) {
 			// socketをオープン
+			// TCPの場合は、AF_INET,SOCK_STREAMを渡す
+			// UDPの場合は、AF_INET,SOCK_DIAGRAMを渡す
+			// linuxのsocketと同じらしいので、manページが参考になる
+			// https://manpages.ubuntu.com/manpages/jammy/ja/man2/socket.2.html
 			sock, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_RAW, int(htons(syscall.ETH_P_ALL)))
 			if err != nil {
 				log.Fatalf("create socket err : %s", err)
@@ -32,6 +36,10 @@ func runChapter1() {
 				Protocol: htons(syscall.ETH_P_ALL),
 				Ifindex:  netif.Index,
 			}
+
+			// ソケットにアドレスを割り当てる
+			// この操作は慣習で「ソケットに名前を着ける」という
+			// https://manpages.ubuntu.com/manpages/jammy/ja/man2/bind.2.html
 			err = syscall.Bind(sock, &addr)
 			if err != nil {
 				log.Fatalf("bind err : %s", err)
