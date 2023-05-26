@@ -72,6 +72,8 @@ func runChapter1() {
 
 	for {
 		// epoll_waitでパケットの受信を待つ
+		// epollインスタンスにイベントがあるかどうかを監視
+		// あったら第二引数(events)に入れて、イベント個数を返り値(nfds)とする
 		nfds, err := syscall.EpollWait(epfd, events, -1)
 		if err != nil {
 			log.Fatalf("epoll wait err : %s", err)
