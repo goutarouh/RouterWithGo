@@ -41,6 +41,8 @@ func (netdev *netDevice) netDevicePoll(mode string) error {
 	}
 	if mode == "ch1" {
 		fmt.Printf("received %d bytes from %s: %x\n", n, netdev.name, recvbuffer[:n])
+	} else {
+		ethernetInput(netdev, recvbuffer[:n])
 	}
 	return nil
 }

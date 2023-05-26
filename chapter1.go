@@ -87,7 +87,7 @@ func runChapter1() {
 			for _, netdev := range netDeviceList {
 				// イベントがあったソケットとマッチしたらパケットを読み込む処理を実行
 				if events[i].Fd == int32(netdev.socket) {
-					err = netdev.netDevicePoll("ch1")
+					err = netdev.netDevicePoll("ch2")
 					if err != nil {
 						log.Fatal(err)
 					}
