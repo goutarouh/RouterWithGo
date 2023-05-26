@@ -78,6 +78,10 @@ func runChapter1() {
 		if err != nil {
 			log.Fatalf("epoll wait err : %s", err)
 		}
+
+		// 今回のケースではnfdsは2となるケースが多い。
+		// host1 ->(1) router1 ->(2) host2
+		// (1)と(2)が同じタイミングのEpollとして返るため
 		for i := 0; i < nfds; i++ {
 			// デバイスから通信を受信
 			for _, netdev := range netDeviceList {
