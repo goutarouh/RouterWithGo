@@ -12,6 +12,7 @@ type netDevice struct {
 	socket     int // NWインターフェースにbindするソケットのディスクリプタ番号
 	sockaddr   syscall.SockaddrLinklayer
 	etheHeader ethernetHeader
+	ipdev      ipDevice
 }
 
 var IGNORE_INTERFACES = []string{"lo", "bond0", "dummy0", "tunl0", "sit0"}
