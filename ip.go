@@ -1,5 +1,108 @@
 package main
 
-func ipInput(inputdev *netDevice, packet []byte) {
+import (
+	"fmt"
+	"net"
+	"strings"
+)
 
+const IP_ADDRESS_LIMITED_BROADCAST uint32 = 0xffffffff
+const IP_PROTOCOL_NUM_ICMP uint8 = 0x01
+const IP_PROTOCOL_NUM_TCP uint8 = 0x06
+const IP_PROTOCOL_NUM_UDP uint8 = 0x11
+
+type ipDevice struct {
+	address   uint32 // デバイスのIPアドレス
+	netmask   uint32 // サブネットマスク
+	broadcast uint32 // ブロードキャストアドレス
+}
+
+type ipHeader struct {
+	version        uint8  // バージョン
+	headerLen      uint8  // ヘッダ長
+	tos            uint8  // Type of Service
+	totalLen       uint16 // Totalのパケット長
+	identify       uint16 // 識別番号
+	fragOffset     uint16 // フラグ
+	ttl            uint8  // Time To Live
+	protocol       uint8  // 上位のプロトコル番号
+	headerChecksum uint16 // ヘッダのチェックサム
+	srcAddr        uint32 // 送信元IPアドレス
+	destAddr       uint32 // 送信先IPアドレス
+}
+
+func getIPdevice(addrs []net.Addr) (ipdev ipDevice) {
+	for _, addr := range addrs {
+		// ipv6ではなくipv4アドレスをリターン
+		ipaddrstr := addr.String()
+		if !strings.Contains(ipaddrstr, ":") && strings.Contains(ipaddrstr, ".") {
+			ip, ipnet, _ := net.ParseCIDR(ipaddrstr)
+			ipdev.address = byteToUint32(ip.To4())
+			ipdev.netmask = byteToUint32(ipnet.Mask)
+			// ブロードキャストアドレスの計算はIPアドレスとサブネットマスクのbit反転の2進数「OR（論理和）」演算
+			ipdev.broadcast = ipdev.address | (^ipdev.netmask)
+		}
+	}
+	return ipdev
+}
+
+func printIPAddr(ip uint32) string {
+	ipbyte := uint32ToByte(ip)
+	return fmt.Sprintf("%d.%d.%d.%d", ipbyte[0], ipbyte[1], ipbyte[2], ipbyte[3])
+}
+
+func ipInput(inputdev *netDevice, packet []byte) {
+	if inputdev.ipdev.address == 0 {
+		return
+	}
+	//IPv4のヘッダは20byteあるので、もしそれ以下の場合は終了
+	if len(packet) < 20 {
+		fmt.Printf("Received IP packet too short from %s\n", inputdev.name)
+		return
+	}
+	// 受信したIPパケットをipHeader構造体にセットする
+	ipheader := ipHeader{
+		version:        packet[0] >> 4,
+		headerLen:      packet[0] << 5 >> 5,
+		tos:            packet[1],
+		totalLen:       byteToUint16(packet[2:4]),
+		identify:       byteToUint16(packet[4:6]),
+		fragOffset:     byteToUint16(packet[6:8]),
+		ttl:            packet[8],
+		protocol:       packet[9],
+		headerChecksum: byteToUint16(packet[10:12]),
+		srcAddr:        byteToUint32(packet[12:16]),
+		destAddr:       byteToUint32(packet[16:20]),
+	}
+
+	fmt.Printf("ipInput Received IP in %s, packet type %d from %s to %s\n", inputdev.name, ipheader.protocol,
+		printIPAddr(ipheader.srcAddr), printIPAddr(ipheader.destAddr))
+
+	// 宛先アドレスがブロードキャストかNICのIPアドレスの場合
+	if ipheader.destAddr == IP_ADDRESS_LIMITED_BROADCAST || inputdev.ipdev.address == ipheader.destAddr {
+		ipInputToOurs(inputdev, &ipheader, packet[20:])
+		return
+	}
+
+	for _, dev := range netDeviceList {
+		if dev.ipdev.address == ipheader.destAddr || dev.ipdev.broadcast == ipheader.destAddr {
+			ipInputToOurs(inputdev, &ipheader, packet[20:])
+			return
+		}
+	}
+
+}
+
+func ipInputToOurs(inputdev *netDevice, ipheader *ipHeader, packet []byte) {
+	// 上位プロトコルへ処理を移行
+	switch ipheader.protocol {
+	case IP_PROTOCOL_NUM_ICMP:
+		fmt.Println("ICMP received!")
+	case IP_PROTOCOL_NUM_UDP:
+		fmt.Printf("udp received : %x\n", packet)
+		return
+	case IP_PROTOCOL_NUM_TCP:
+		fmt.Printf("Unhandled ip protocol number : %d\n", ipheader.protocol)
+		return
+	}
 }
