@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"strings"
 )
 
+const IP_ADDRESS_LEN = 4
 const IP_ADDRESS_LIMITED_BROADCAST uint32 = 0xffffffff
 const IP_PROTOCOL_NUM_ICMP uint8 = 0x01
 const IP_PROTOCOL_NUM_TCP uint8 = 0x06
@@ -29,6 +31,31 @@ type ipHeader struct {
 	headerChecksum uint16 // ヘッダのチェックサム
 	srcAddr        uint32 // 送信元IPアドレス
 	destAddr       uint32 // 送信先IPアドレス
+}
+
+func (ipheader ipHeader) ToPacket(calc bool) (ipHeaderByte []byte) {
+	var b bytes.Buffer
+
+	b.Write([]byte{ipheader.version<<4 + ipheader.headerLen})
+	b.Write([]byte{ipheader.tos})
+	b.Write(uint16ToByte(ipheader.totalLen))
+	b.Write(uint16ToByte(ipheader.identify))
+	b.Write(uint16ToByte(ipheader.fragOffset))
+	b.Write([]byte{ipheader.ttl})
+	b.Write([]byte{ipheader.protocol})
+	b.Write(uint16ToByte(ipheader.headerChecksum))
+	b.Write(uint32ToByte(ipheader.srcAddr))
+	b.Write(uint32ToByte(ipheader.destAddr))
+
+	if calc {
+		ipHeaderByte = b.Bytes()
+		checksum := calcChecksum(ipHeaderByte)
+		ipHeaderByte[10] = checksum[0]
+		ipHeaderByte[11] = checksum[1]
+	} else {
+		ipHeaderByte = b.Bytes()
+	}
+	return ipHeaderByte
 }
 
 func getIPdevice(addrs []net.Addr) (ipdev ipDevice) {
@@ -94,6 +121,7 @@ func ipInput(inputdev *netDevice, packet []byte) {
 }
 
 func ipInputToOurs(inputdev *netDevice, ipheader *ipHeader, packet []byte) {
+	fmt.Println("ipInputToOUrs")
 	// 上位プロトコルへ処理を移行
 	switch ipheader.protocol {
 	case IP_PROTOCOL_NUM_ICMP:
@@ -105,4 +133,37 @@ func ipInputToOurs(inputdev *netDevice, ipheader *ipHeader, packet []byte) {
 		fmt.Printf("Unhandled ip protocol number : %d\n", ipheader.protocol)
 		return
 	}
+}
+
+func ipPacketEncapsulateOutput(inputdev *netDevice, destAddr, srcAddr uint32, payload []byte, protocolType uint8) {
+	var ipPacket []byte
+
+	// IPヘッダは20byte
+	totalLength := 20 + len(payload)
+
+	// IPヘッダの各項目を設定
+	ipheader := ipHeader{
+		version:        4,
+		headerLen:      20 / 4,
+		tos:            0,
+		totalLen:       uint16(totalLength),
+		identify:       0xf80c,
+		fragOffset:     2 << 13,
+		ttl:            0x40,
+		protocol:       protocolType,
+		headerChecksum: 0, // checksum計算する前は0をセット
+		srcAddr:        srcAddr,
+		destAddr:       destAddr,
+	}
+
+	ipPacket = append(ipPacket, ipheader.ToPacket(true)...)
+	ipPacket = append(ipPacket, payload...)
+
+	destMacAddr, _ := searchArpTableEntry(destAddr)
+	if destMacAddr != [6]uint8{0, 0, 0, 0, 0, 0} {
+		ethernetOutput(inputdev, destMacAddr, ipPacket, ETHER_TYPE_IP)
+	} else {
+		sendArpRequest(inputdev, destAddr)
+	}
+
 }
