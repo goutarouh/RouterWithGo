@@ -30,6 +30,15 @@ func htons(i uint16) uint16 {
 	return (i<<8)&0xff00 | i>>8
 }
 
+// ネットデバイスの送信処理
+func (netdev netDevice) netDeviceTransmit(data []byte) error {
+	err := syscall.Sendto(netdev.socket, data, 0, &netdev.sockaddr)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (netdev *netDevice) netDevicePoll(mode string) error {
 	recvbuffer := make([]byte, 1500)
 	n, _, err := syscall.Recvfrom(netdev.socket, recvbuffer, 0)

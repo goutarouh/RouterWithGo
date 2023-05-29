@@ -121,7 +121,6 @@ func ipInput(inputdev *netDevice, packet []byte) {
 }
 
 func ipInputToOurs(inputdev *netDevice, ipheader *ipHeader, packet []byte) {
-	fmt.Println("ipInputToOUrs")
 	// 上位プロトコルへ処理を移行
 	switch ipheader.protocol {
 	case IP_PROTOCOL_NUM_ICMP:
