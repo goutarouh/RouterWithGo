@@ -93,6 +93,32 @@ func arpInput(netdev *netDevice, packet []byte) {
 	}
 }
 
+func addArpTableEntry(netdev *netDevice, ipaddr uint32, macaddr [6]uint8) {
+	// 既存のARPテーブルの更新が必要か確認
+	if len(ArpTableEntryList) != 0 {
+		for _, arpTable := range ArpTableEntryList {
+			// IPアドレスは同じだがMacアドレスが異なる場合は更新
+			if arpTable.ipAddr == ipaddr && arpTable.macAddr != macaddr {
+				arpTable.macAddr = macaddr
+			}
+			// Macアドレスは同じだがIPアドレスが変わった場合は更新
+			if arpTable.macAddr == macaddr && arpTable.ipAddr != ipaddr {
+				arpTable.ipAddr = ipaddr
+			}
+			// 既に存在する場合はreturnする
+			if arpTable.macAddr == macaddr && arpTable.ipAddr == ipaddr {
+				return
+			}
+		}
+	}
+	ArpTableEntryList = append(ArpTableEntryList, arpTableEntry{
+		macAddr: macaddr,
+		ipAddr:  ipaddr,
+		netdev:  netdev,
+	})
+	fmt.Printf("ARP TABEL is %+v\n", ArpTableEntryList)
+}
+
 /*
 ARPテーブルの検索
 */
@@ -133,7 +159,7 @@ func arpReplyArrives(netdev *netDevice, arp arpIPToEthernet) {
 	if netdev.ipdev.address != 00000000 {
 		fmt.Printf("Added arp table entry by arp reply (%s => %s)\n", printIPAddr(arp.senderIPAddr), printMacAddr(arp.senderHardwareAddr))
 		// ARPテーブルエントリの追加
-		//addArpTableEntry(netdev, arp.senderIPAddr, arp.senderHardwareAddr)
+		addArpTableEntry(netdev, arp.senderIPAddr, arp.senderHardwareAddr)
 	}
 }
 
