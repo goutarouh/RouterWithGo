@@ -36,3 +36,13 @@ sudo ip netns exec router1 sysctl net.ipv4.ip_forward=1
 
 # ルーター起動
 # sudo ip netns exec router1 ./main --mode ch1
+
+
+
+# host1: 
+ # IP: 10.0.1.2
+ # MAC: da:e0:3e:ba:c2:01
+
+# router1: 
+ # IP: 10.0.1.254
+ # MAC: c6:9a:10:00:c2:18
