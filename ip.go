@@ -125,6 +125,7 @@ func ipInputToOurs(inputdev *netDevice, ipheader *ipHeader, packet []byte) {
 	switch ipheader.protocol {
 	case IP_PROTOCOL_NUM_ICMP:
 		fmt.Println("ICMP received!")
+		icmpInput(inputdev, ipheader.srcAddr, ipheader.destAddr, packet)
 	case IP_PROTOCOL_NUM_UDP:
 		fmt.Printf("udp received : %x\n", packet)
 		return
