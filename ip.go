@@ -33,6 +33,19 @@ type ipHeader struct {
 	destAddr       uint32 // 送信先IPアドレス
 }
 
+type ipRouteType uint8
+
+const (
+	connected ipRouteType = iota
+	network
+)
+
+type ipRouteEntry struct {
+	iptype  ipRouteType
+	netdev  *netDevice
+	nexthop uint32
+}
+
 func (ipheader ipHeader) ToPacket(calc bool) (ipHeaderByte []byte) {
 	var b bytes.Buffer
 
