@@ -37,12 +37,12 @@ type ipHeader struct {
 type ipRouteType uint8
 
 const (
-	connected ipRouteType = iota
-	network
+	connected ipRouteType = iota // 00000000
+	network                      // 00000001
 )
 
 type ipRouteEntry struct {
-	iptype  ipRouteType
+	iptype  ipRouteType // 直接接続されているなら0、間接敵なら1ということっぽい
 	netdev  *netDevice
 	nexthop uint32
 }
