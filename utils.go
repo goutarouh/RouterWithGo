@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"net"
 	"strings"
 )
 
@@ -50,4 +51,17 @@ func uint32ToByte(i uint32) []byte {
 	b := make([]byte, 4)
 	binary.BigEndian.PutUint32(b, i)
 	return b
+}
+
+/*
+intを10進数のipアドレス表記に変換
+*/
+func convertuint32ToIPv4(ipInt uint32) string {
+	ip := make(net.IP, 4)
+	ip[0] = byte(ipInt >> 24)
+	ip[1] = byte(ipInt >> 16)
+	ip[2] = byte(ipInt >> 8)
+	ip[3] = byte(ipInt)
+
+	return ip.String()
 }
