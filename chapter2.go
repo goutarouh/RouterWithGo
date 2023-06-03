@@ -8,7 +8,7 @@ import (
 )
 
 // Global変数でルーティングテーブルを宣言
-// var iproute radixTreeNode
+var iproute radixTreeNode
 
 // Global変数で宣言
 var netDeviceList []*netDevice
@@ -16,12 +16,12 @@ var netDeviceList []*netDevice
 func runChapter2(mode string) {
 
 	// 直接接続ではないhost2へのルーティングを登録する
-	// routeEntryTohost2 := ipRouteEntry{
-	// 	iptype:  network,
-	// 	nexthop: 0xc0a80002,
-	// }
+	routeEntryTohost2 := ipRouteEntry{
+		iptype:  network,
+		nexthop: 0xc0a80002,
+	}
 	// 192.168.2.0/24の経路の登録
-	// iproute.radixTreeAdd(0xc0a80202&0xffffff00, 24, routeEntryTohost2)
+	iproute.radixTreeAdd(0xc0a80202&0xffffff00, 24, routeEntryTohost2)
 
 	// epoll作成
 	events := make([]syscall.EpollEvent, 10)
@@ -75,14 +75,14 @@ func runChapter2(mode string) {
 			}
 
 			// 直接接続ネットワークの経路をルートテーブルのエントリに設定
-			// routeEntry := ipRouteEntry{
-			// 	iptype: connected,
-			// 	netdev: &netdev,
-			// }
-			// prefixLen := subnetToPrefixLen(netdev.ipdev.netmask)
-			// iproute.radixTreeAdd(netdev.ipdev.address&netdev.ipdev.netmask, prefixLen, routeEntry)
-			// fmt.Printf("Set directly connected route %s/%d via %s\n",
-			// 	printIPAddr(netdev.ipdev.address&netdev.ipdev.netmask), prefixLen, netdev.name)
+			routeEntry := ipRouteEntry{
+				iptype: connected,
+				netdev: &netdev,
+			}
+			prefixLen := subnetToPrefixLen(netdev.ipdev.netmask)
+			iproute.radixTreeAdd(netdev.ipdev.address&netdev.ipdev.netmask, prefixLen, routeEntry)
+			fmt.Printf("Set directly connected route %s/%d via %s\n",
+				printIPAddr(netdev.ipdev.address&netdev.ipdev.netmask), prefixLen, netdev.name)
 
 			// netDevice構造体を作成
 			// net_deviceの連結リストに連結させる

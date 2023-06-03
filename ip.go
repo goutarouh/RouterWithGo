@@ -91,6 +91,16 @@ func printIPAddr(ip uint32) string {
 	return fmt.Sprintf("%d.%d.%d.%d", ipbyte[0], ipbyte[1], ipbyte[2], ipbyte[3])
 }
 
+func subnetToPrefixLen(netmask uint32) uint32 {
+	var prefixlen uint32
+	for prefixlen = 0; prefixlen < 32; prefixlen++ {
+		if !(netmask>>(31-prefixlen)&0b01 == 1) {
+			break
+		}
+	}
+	return prefixlen
+}
+
 func ipInput(inputdev *netDevice, packet []byte) {
 	if inputdev.ipdev.address == 0 {
 		return
